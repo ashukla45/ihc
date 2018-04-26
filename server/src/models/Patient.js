@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 const PatientSchema = Schema({
-  key: String,
+  key: String, // A unique identifier created from front end
   firstName: String,
   fatherName: String, // last name
   motherName: String, // last name

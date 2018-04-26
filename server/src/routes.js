@@ -16,17 +16,18 @@ router.post('/patient', PatientController.CreatePatient);
 // router.delete('/patient/:key', PatientController.DeletePatient);
 router.patch('/patient/:key', PatientController.UpdatePatient);
 
+// Return the updates that occurred since a given timestamp
 router.get('/updates/:timestamp', PatientController.GetUpdates);
 
 router.get('/patient/:key/soap/:date', PatientController.GetSoap);
 router.get('/patient/:key/status/:date', PatientController.GetStatus);
 router.get('/patient/:key/triage/:date', PatientController.GetTriage);
-router.get('/patient/:key/medications', PatientController.GetDrugUpdates);
+router.get('/patient/:key/drugUpdates', PatientController.GetDrugUpdates);
 
 router.patch('/patient/:key/soap/:date', PatientController.UpdateSoap);
 router.patch('/patient/:key/status/:date', PatientController.UpdateStatus);
 router.patch('/patient/:key/triage/:date', PatientController.UpdateTriage);
-router.patch('/patient/:key/medications', PatientController.UpdateDrugUpdates);
+router.patch('/patient/:key/drugUpdates', PatientController.UpdateDrugUpdates);
 
 module.exports = router;
 

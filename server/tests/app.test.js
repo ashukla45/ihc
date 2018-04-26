@@ -5,8 +5,8 @@ import 'sinon-mongoose';
 
 import PatientModel from '../src/models/Patient';
 
-let mock = null;
-describe('Test the routes involving a patient', () => {
+describe('Test GetPatient routes', () => {
+  let mock = null;
   afterEach(() => {
     // Within this describe() block, we have multiple tests that mock the same
     // method, so we must restore() them to avoid conflicts
@@ -15,7 +15,7 @@ describe('Test the routes involving a patient', () => {
     }
   });
 
-  test('/patient/:key should return patient if they exist', () => {
+  test('should return patient if they exist', () => {
     const model = { firstName: "Test" };
 
     // Mocking prevents us from having to use the real database. We can
@@ -33,12 +33,72 @@ describe('Test the routes involving a patient', () => {
       .expect({status: true, patient: model});
   });
 
-  test('/patient/:key should return error if no patient exists', () => {
+  test('should return error if no patient exists', () => {
     mock = sinon.mock(PatientModel)
       .expects('findOne').withArgs({key: 'keythatdoesntexist'})
       .yields(new Error("Patient with key keythatdoesntexist doesn\'t exist"), null);
 
     return request(app).get('/patient/keythatdoesntexist')
       .expect({status: false, error: 'Patient with key keythatdoesntexist doesn\'t exist'});
+  });
+});
+
+describe('Test CreatePatient routes', () => {
+  let mocks = [];
+  afterEach(() => {
+    // Within this describe() block, we have multiple tests that mock the same
+    // method, so we must restore() them to avoid conflicts
+    for(let i in mocks) {
+      mocks[i].restore();
+    }
+  });
+
+  test('should return success if add is successful', () => {
+    const patient = { key: "Test&Last&20110101", firstName: "Test", lastName: "Last", birthday: "20110101" };
+
+    const mock1 = sinon.mock(PatientModel)
+      .expects('findOne').withArgs({key: patient.key})
+      .yields(null, null);
+    mocks.push(mock1);
+
+    const mock2 = sinon.mock(PatientModel)
+      .expects('create').withArgs(patient)
+      .yields(null);
+    mocks.push(mock2);
+
+    return request(app).post('/patient')
+      .send({patient: patient})
+      .expect({status: true});
+  });
+
+  test('should return error if patient with that key already exists', () => {
+    const patient = { key: "Test&Last&20110101", firstName: "Test", lastName: "Last", birthday: "20110101" };
+
+    const mock1 = sinon.mock(PatientModel)
+      .expects('findOne').withArgs({key: patient.key})
+      .yields(null, patient);
+    mocks.push(mock1);
+
+    return request(app).post('/patient')
+      .send({patient: patient})
+      .expect({status: false, error: "Patient already exists with that name and birthday. Use a different name"});
+  });
+
+  test('should return error if save fails', () => {
+    const patient = { key: "Test&Last&20110101", firstName: "Test", lastName: "Last", birthday: "20110101" };
+
+    const mock1 = sinon.mock(PatientModel)
+      .expects('findOne').withArgs({key: patient.key})
+      .yields(null, null);
+    mocks.push(mock1);
+
+    const mock2 = sinon.mock(PatientModel)
+      .expects('create').withArgs(patient)
+      .yields(new Error('Problems saving'));
+    mocks.push(mock2);
+
+    return request(app).post('/patient')
+      .send({patient: patient})
+      .expect({status: false, error: "Problems saving"});
   });
 });
