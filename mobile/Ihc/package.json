@@ -3,13 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "babel": {
-      "presets": ["react-native"]
+    "presets": [
+      "react-native"
+    ]
   },
   "scripts": {
     "start": "node node_modules/react-native/local-cli/cli.js start",
     "test": "jest"
   },
   "dependencies": {
+    "npm": "^6.0.0",
     "prop-types": "^15.6.0",
     "react": "16.0.0",
     "react-devtools": "^3.2.1",
@@ -40,8 +43,6 @@
     "globals": {
       "__TEST__": true
     },
-    "setupFiles": [
-      "./jest-setup.js"
-    ]
+    "setupTestFrameworkScriptFile": "<rootDir>/jest-setup.js"
   }
 }

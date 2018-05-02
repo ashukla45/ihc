@@ -11,22 +11,47 @@ import PatientController from './controllers/Patient';
 const router = express.Router();
 
 router.get('/patient/:key', PatientController.GetPatient);
+
+//Alex
+//returns an array of patients
 router.get('/patients', PatientController.GetPatients);
+
 router.post('/patient', PatientController.CreatePatient);
 // router.delete('/patient/:key', PatientController.DeletePatient);
+
+//updates patient's personal info
+//everything except doctors assessment, ie: name, phone number, age
 router.patch('/patient/:key', PatientController.UpdatePatient);
 
 // Return the updates that occurred since a given timestamp
+//ASK MATTHEW
 router.get('/updates/:timestamp', PatientController.GetUpdates);
 
+//Kenny
+//get soap info
 router.get('/patient/:key/soap/:date', PatientController.GetSoap);
+
+//get status info
+//KENNY
 router.get('/patient/:key/status/:date', PatientController.GetStatus);
+
+//Brent
+//get triage info
 router.get('/patient/:key/triage/:date', PatientController.GetTriage);
+
+//ayush
+//get drug info
 router.get('/patient/:key/drugUpdates', PatientController.GetDrugUpdates);
 
+//updates the soap of the patient
 router.patch('/patient/:key/soap/:date', PatientController.UpdateSoap);
+//whats status
 router.patch('/patient/:key/status/:date', PatientController.UpdateStatus);
+
+//updates the triage of the patient
 router.patch('/patient/:key/triage/:date', PatientController.UpdateTriage);
+
+//updates the Medicine of the patient
 router.patch('/patient/:key/drugUpdates', PatientController.UpdateDrugUpdates);
 
 module.exports = router;
