@@ -43,6 +43,37 @@ describe('Test GetPatient routes', () => {
   });
 });
 
+describe('Test getDrugUpdates routes', () => {
+  let mock = null;
+  afterEach(() => {
+    // Within this describe() block, we have multiple tests that mock the same
+    // method, so we must restore() them to avoid conflicts
+    if(mock) {
+      mock.restore();
+    }
+  });
+
+  test('should return drugUpdates if they exist', () => {
+    const model = { medications: ["a", "b"]  };
+
+    mock = sinon.mock(PatientModel)
+      .expects('findOne').withArgs({key: 'keythatexists'})
+      .yields(null, model);
+
+    return request(app).get('/patient/keythatexists/drugUpdates')
+      .expect({status: true, drugUpdates: model.medications});
+  });
+
+  test('should return error if no patient exists', () => {
+    mock = sinon.mock(PatientModel)
+      .expects('findOne').withArgs({key: 'keythatdoesntexist'})
+      .yields(new Error("Patient with key keythatdoesntexist doesn\'t exist"), null);
+
+    return request(app).get('/patient/keythatdoesntexist/drugUpdates')
+      .expect({status: false, error: 'Patient with key keythatdoesntexist doesn\'t exist'});
+  });
+});
+
 describe('Test CreatePatient routes', () => {
   let mocks = [];
   afterEach(() => {
@@ -102,3 +133,5 @@ describe('Test CreatePatient routes', () => {
       .expect({status: false, error: "Problems saving"});
   });
 });
+
+
