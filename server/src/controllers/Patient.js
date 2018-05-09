@@ -130,8 +130,19 @@ const PatientController = {
       res.json({status: true, triage: triage});
     });
   },
-  GetDrugUpdates: function(req, res){
+  GetDrugUpdates: function(req, res){    
+    PatientModel.findOne({key: req.params.key}, function(err, patient) {
+      if(!patient) {
+        err = new Error("Patient with key " + req.params.key + " doesn't exist");
+      }
+      if(err) {
+        res.json({status: false, error: err.message});
+        return;
+      }
+      res.json({status: true, drugUpdates: patient.medications});
+    });
   },
+  
   UpdateSoap: function(req, res){
     PatientModel.findOne({key: req.params.key}, function(err, patient) {
       if(!patient) {
@@ -220,6 +231,7 @@ const PatientController = {
   },
   UpdateTriage: function(req, res){
   },
+  // to be done 
   UpdateDrugUpdates: function(req, res){
   }
 };
