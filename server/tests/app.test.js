@@ -4,6 +4,49 @@ import sinon from 'sinon';
 import 'sinon-mongoose';
 
 import PatientModel from '../src/models/Patient';
+import SoapModel from '../src/models/Soap';
+import TriageModel from '../src/models/Triage';
+import StatusModel from '../src/models/Status';
+
+describe('Test GetSoap routes', () => {
+  let mock = null;
+  afterEach(() => {
+    if(mock) {
+      mock.restore();
+    }
+  });
+
+  test('should return soap if exists', () => {
+    const soap = { name: "Soap" };
+
+    mock = sinon.mock(SoapModel)
+      .expects('findOne').withArgs({patientKey: 'keythatexists', date: 'datethatexists'})
+      .yields(null, soap);
+
+    return request(app).get('/patient/keythatexists/soap/datethatexists')
+      .expect({status: true, soap: soap});
+  });
+});
+
+describe('Test GetStatus routes', () => {
+  let mock = null;
+  afterEach(() => {
+    if(mock) {
+      mock.restore();
+    }
+  });
+
+  test('should return status of patient if exists', () => {
+    const patientStatus = { patientStatus: "status" };
+
+    mock = sinon.mock(StatusModel) 
+      .expects('findOne').withArgs({patientKey: 'keythatexists', date: 'datethatexists'})
+      .yields(null, patientStatus);
+
+    return request(app).get('/patient/keythatexists/status/datethatexists')
+      .expect({status: true, patientStatus: patientStatus})
+  });
+});
 
 describe('Test GetPatient routes', () => {
   let mock = null;
@@ -43,35 +86,7 @@ describe('Test GetPatient routes', () => {
   });
 });
 
-describe('Test getDrugUpdates routes', () => {
-  let mock = null;
-  afterEach(() => {
-    // Within this describe() block, we have multiple tests that mock the same
-    // method, so we must restore() them to avoid conflicts
-    if(mock) {
-      mock.restore();
-    }
-  });
 
-  test('should return drugUpdates if they exist', () => {
-    const model = { medications: ["a", "b"]  };
-
-    mock = sinon.mock(PatientModel)
-      .expects('findOne').withArgs({key: 'keythatexists'})
-      .yields(null, model);
-
-    return request(app).get('/patient/keythatexists/drugUpdates')
-      .expect({status: true, drugUpdates: model.medications});
-  });
-
-  test('should return error if no patient exists', () => {
-    mock = sinon.mock(PatientModel)
-      .expects('findOne').withArgs({key: 'keythatdoesntexist'})
-      .yields(new Error("Patient with key keythatdoesntexist doesn\'t exist"), null);
-
-    return request(app).get('/patient/keythatdoesntexist/drugUpdates')
-      .expect({status: false, error: 'Patient with key keythatdoesntexist doesn\'t exist'});
-  });
 });
 
 describe('Test CreatePatient routes', () => {
@@ -133,5 +148,4 @@ describe('Test CreatePatient routes', () => {
       .expect({status: false, error: "Problems saving"});
   });
 });
-
 
