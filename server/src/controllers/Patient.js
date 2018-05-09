@@ -233,7 +233,36 @@ const PatientController = {
   },
   // to be done 
   UpdateDrugUpdates: function(req, res){
+      PatientModel.findOne({key: req.params.key}, function(err, patient) {
+      if(!patient) {
+        err = new Error("Patient with key " + req.params.key + " doesn't exist");
+      }
+        for (let [i,drugs] of patient.medications.entries()) {
+        if (drugs.date = req.body.date) {
+          if (drugs.lastUpdated > req.body.drugs.lastUpdated) {
+            res.json({
+              status: false,
+              error: "Medication sent is not up-to-date. Sync required."
+            })
+            return;
+          }
+
+          patient.medications[i] = req.body.drugs;
+          patient.save(function(err) {
+            if(err) {
+              res.json({status: false, error: err.message});
+              return;
+            }
+            res.json({status: true});
+            return;
+          });
+          return;
+        }
+      }
+
+
   }
 };
+
 
 module.exports = PatientController;
