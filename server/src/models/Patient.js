@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+import DrugUpdateModel from './DrugUpdate';
+import SoapModel from './Soap';
+import TriageModel from './Triage';
+import StatusModel from './Status';
+
 const Schema = mongoose.Schema;
 const PatientSchema = Schema({
   key: String, // A unique identifier created from front end
@@ -11,10 +16,10 @@ const PatientSchema = Schema({
   phone: String,
   motherHeight: Number,
   fatherHeight: Number,
-  medications: [{ type: Schema.Types.ObjectId, ref: 'DrugUpdate' }],
-  soaps: [{ type: Schema.Types.ObjectId, ref: 'Soap' }],
-  triages: [{ type: Schema.Types.ObjectId, ref: 'Triage' }],
-  statuses: [{ type: Schema.Types.ObjectId, ref: 'Status' }],
+  medications: [DrugUpdateModel.schema],
+  soaps: [SoapModel.schema],
+  triages: [TriageModel.schema],
+  statuses: [StatusModel.schema],
   lastUpdated: Number // timestamp
 });
 const PatientModel = mongoose.model('Patient', PatientSchema);
