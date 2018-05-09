@@ -70,6 +70,7 @@ const PatientController = {
   },
   UpdateTriage: function(req, res){
   },
+  // to be done 
   UpdateDrugUpdates: function(req, res){
   }
 };
