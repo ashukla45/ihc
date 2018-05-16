@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {
+  ActivityIndicator,
   StyleSheet,
   Button,
   Text,
@@ -18,8 +19,10 @@ export default class SigninScreen extends Component<{}> {
     this.state = {
       formValues: {newPatient: false},
       formType: this.Signin,
-      error: '',
-    }
+      successMsg: null,
+      error: null,
+      loading: false
+    };
   }
 
   Signin = t.struct({
@@ -50,17 +53,17 @@ export default class SigninScreen extends Component<{}> {
 
   options = {
     fields: {
-      motherName: {label: "Mother's last name"},
-      fatherName: {label: "Father's last name"},
+      motherName: {label: 'Mother\'s last name'},
+      fatherName: {label: 'Father\'s last name'},
       birthday: {
-        label: "Birthday",
+        label: 'Birthday',
         mode: 'date',
         config: {
           format: formatDate,
           dialogMode: 'spinner'
         }
       },
-      newPatient: {label: "New patient?"},
+      newPatient: {label: 'New patient?'},
     }
   }
 
@@ -76,41 +79,59 @@ export default class SigninScreen extends Component<{}> {
     if(!this.refs.form.validate().isValid()) {
       return;
     }
+    this.setState({loading: true});
     const form = this.refs.form.getValue();
 
     if(form.newPatient) {
       const patient = Patient.extractFromForm(form);
       data.createPatient(patient)
-          .then( () => {
-            this.setState({
-              // Clear form, reset to Signin form
-              formValues: {newPatient: false},
-              formType: this.Signin,
-              successMsg: `${patient.firstName} added successfully`,
-              error: null
-            });
-          })
-          .catch( (e) => {
-            this.setState({error: e.message, successMsg: null});
+        .then( () => {
+          this.setState({
+            // Clear form, reset to Signin form
+            formValues: {newPatient: false},
+            formType: this.Signin,
+            successMsg: `${patient.firstName} added successfully`,
+            error: null,
+            loading: false
           });
+        })
+        .catch( (e) => {
+          this.setState({error: e.message, successMsg: null, loading: false});
+        });
     } else {
       const patient = Patient.extractFromForm(form);
       data.signinPatient(patient)
-          .then( () => {
-            this.setState({
-              // Clear form, reset to Signin form
-              formValues: {newPatient: false},
-              formType: this.Signin,
-              successMsg: `${patient.firstName} signed in successfully`,
-            });
-          })
-          .catch( (e) => {
-            this.setState({formValues: form, error: e.message, successMsg: null});
+        .then( () => {
+          this.setState({
+            // Clear form, reset to Signin form
+            formValues: {newPatient: false},
+            formType: this.Signin,
+            successMsg: `${patient.firstName} signed in successfully`,
+            error: null,
+            loading: false
           });
+        })
+        .catch( (e) => {
+          this.setState({formValues: form, error: e.message, successMsg: null,
+            loading: false});
+        });
     }
   }
 
   render() {
+    if(this.state.loading) {
+      return (
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.title}>
+            Signin
+          </Text>
+          <Text>Loading...</Text>
+          <ActivityIndicator size="large" />
+          <Text>Dont leave this screen until loading has completed.</Text>
+        </ScrollView>
+      );
+    }
+
     return (
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>
@@ -118,7 +139,7 @@ export default class SigninScreen extends Component<{}> {
         </Text>
 
         <View style={styles.form}>
-          <Form ref="form" type={this.state.formType}
+          <Form ref='form' type={this.state.formType}
             value={this.state.formValues}
             options={this.options}
             onChange={this.onFormChange}
@@ -129,7 +150,7 @@ export default class SigninScreen extends Component<{}> {
           </Text>
 
           <Button onPress={this.submit}
-            title="Submit" />
+            title='Submit' />
 
           <Text style={styles.success}>
             {this.state.successMsg}
