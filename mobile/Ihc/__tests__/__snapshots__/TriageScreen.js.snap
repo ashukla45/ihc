@@ -59,20 +59,11 @@ ShallowWrapper {
                   "date": Object {
                     "editable": false,
                   },
-                  "fasting": Object {
-                    "label": "Did this patient fast?",
-                  },
                   "labsDone": Object {
                     "label": "Did they get labs done?",
                   },
-                  "pregnancyTest": Object {
-                    "label": "Pregnancy test positive?",
-                  },
                   "statusClarification": Object {
                     "label": "Status clarification (if picked Other)",
-                  },
-                  "urineTestDone": Object {
-                    "label": "Did they take a urine test?",
                   },
                 },
               }
@@ -275,20 +266,15 @@ ShallowWrapper {
               }
             }
           />
-          <Text
-            accessible={true}
-            allowFontScaling={true}
-            ellipsizeMode="tail"
-            style={
+          <Button
+            onPress={[Function]}
+            styles={
               Object {
-                "color": "red",
-                "margin": 10,
-                "textAlign": "center",
+                "margin": 4,
               }
             }
-          >
-            
-          </Text>
+            title="To Medications"
+          />
           <Button
             onPress={[Function]}
             styles={
@@ -307,27 +293,14 @@ ShallowWrapper {
             }
             title="Update"
           />
-          <Text
-            accessible={true}
-            allowFontScaling={true}
-            ellipsizeMode="tail"
-            style={
-              Object {
-                "color": "green",
-                "margin": 10,
-                "textAlign": "center",
-              }
-            }
-          />
         </View>,
       ],
-      "contentContainerStyle": Object {
-        "alignItems": "center",
-        "backgroundColor": "#F5FCFF",
-        "flex": 0,
-        "justifyContent": "center",
-        "padding": 20,
-      },
+      "errorMsg": "[object Object] does not contain string option string?",
+      "loading": false,
+      "patientKey": undefined,
+      "setLoading": [Function],
+      "setMsg": [Function],
+      "successMsg": null,
     },
     "ref": null,
     "rendered": Array [
@@ -374,20 +347,11 @@ ShallowWrapper {
                     "date": Object {
                       "editable": false,
                     },
-                    "fasting": Object {
-                      "label": "Did this patient fast?",
-                    },
                     "labsDone": Object {
                       "label": "Did they get labs done?",
                     },
-                    "pregnancyTest": Object {
-                      "label": "Pregnancy test positive?",
-                    },
                     "statusClarification": Object {
                       "label": "Status clarification (if picked Other)",
-                    },
-                    "urineTestDone": Object {
-                      "label": "Did they take a urine test?",
                     },
                   },
                 }
@@ -590,20 +554,16 @@ ShallowWrapper {
                 }
               }
             />,
-            <Text
-              accessible={true}
-              allowFontScaling={true}
-              ellipsizeMode="tail"
-              style={
+            null,
+            <Button
+              onPress={[Function]}
+              styles={
                 Object {
-                  "color": "red",
-                  "margin": 10,
-                  "textAlign": "center",
+                  "margin": 4,
                 }
               }
-            >
-              
-            </Text>,
+              title="To Medications"
+            />,
             <Button
               onPress={[Function]}
               styles={
@@ -621,18 +581,6 @@ ShallowWrapper {
                 }
               }
               title="Update"
-            />,
-            <Text
-              accessible={true}
-              allowFontScaling={true}
-              ellipsizeMode="tail"
-              style={
-                Object {
-                  "color": "green",
-                  "margin": 10,
-                  "textAlign": "center",
-                }
-              }
             />,
           ],
           "style": Object {
@@ -660,20 +608,11 @@ ShallowWrapper {
                   "date": Object {
                     "editable": false,
                   },
-                  "fasting": Object {
-                    "label": "Did this patient fast?",
-                  },
                   "labsDone": Object {
                     "label": "Did they get labs done?",
                   },
-                  "pregnancyTest": Object {
-                    "label": "Pregnancy test positive?",
-                  },
                   "statusClarification": Object {
                     "label": "Status clarification (if picked Other)",
-                  },
-                  "urineTestDone": Object {
-                    "label": "Did they take a urine test?",
                   },
                 },
               },
@@ -873,23 +812,20 @@ ShallowWrapper {
             "rendered": null,
             "type": [Function],
           },
+          null,
           Object {
             "instance": null,
             "key": undefined,
             "nodeType": "class",
             "props": Object {
-              "accessible": true,
-              "allowFontScaling": true,
-              "children": "",
-              "ellipsizeMode": "tail",
-              "style": Object {
-                "color": "red",
-                "margin": 10,
-                "textAlign": "center",
+              "onPress": [Function],
+              "styles": Object {
+                "margin": 4,
               },
+              "title": "To Medications",
             },
             "ref": null,
-            "rendered": "",
+            "rendered": null,
             "type": [Function],
           },
           Object {
@@ -917,25 +853,6 @@ ShallowWrapper {
                 "margin": 4,
               },
               "title": "Update",
-            },
-            "ref": null,
-            "rendered": null,
-            "type": [Function],
-          },
-          Object {
-            "instance": null,
-            "key": undefined,
-            "nodeType": "class",
-            "props": Object {
-              "accessible": true,
-              "allowFontScaling": true,
-              "children": undefined,
-              "ellipsizeMode": "tail",
-              "style": Object {
-                "color": "green",
-                "margin": 10,
-                "textAlign": "center",
-              },
             },
             "ref": null,
             "rendered": null,
@@ -993,20 +910,11 @@ ShallowWrapper {
                     "date": Object {
                       "editable": false,
                     },
-                    "fasting": Object {
-                      "label": "Did this patient fast?",
-                    },
                     "labsDone": Object {
                       "label": "Did they get labs done?",
                     },
-                    "pregnancyTest": Object {
-                      "label": "Pregnancy test positive?",
-                    },
                     "statusClarification": Object {
                       "label": "Status clarification (if picked Other)",
-                    },
-                    "urineTestDone": Object {
-                      "label": "Did they take a urine test?",
                     },
                   },
                 }
@@ -1209,20 +1117,15 @@ ShallowWrapper {
                 }
               }
             />
-            <Text
-              accessible={true}
-              allowFontScaling={true}
-              ellipsizeMode="tail"
-              style={
+            <Button
+              onPress={[Function]}
+              styles={
                 Object {
-                  "color": "red",
-                  "margin": 10,
-                  "textAlign": "center",
+                  "margin": 4,
                 }
               }
-            >
-              
-            </Text>
+              title="To Medications"
+            />
             <Button
               onPress={[Function]}
               styles={
@@ -1241,27 +1144,14 @@ ShallowWrapper {
               }
               title="Update"
             />
-            <Text
-              accessible={true}
-              allowFontScaling={true}
-              ellipsizeMode="tail"
-              style={
-                Object {
-                  "color": "green",
-                  "margin": 10,
-                  "textAlign": "center",
-                }
-              }
-            />
           </View>,
         ],
-        "contentContainerStyle": Object {
-          "alignItems": "center",
-          "backgroundColor": "#F5FCFF",
-          "flex": 0,
-          "justifyContent": "center",
-          "padding": 20,
-        },
+        "errorMsg": "[object Object] does not contain string option string?",
+        "loading": false,
+        "patientKey": undefined,
+        "setLoading": [Function],
+        "setMsg": [Function],
+        "successMsg": null,
       },
       "ref": null,
       "rendered": Array [
@@ -1308,20 +1198,11 @@ ShallowWrapper {
                       "date": Object {
                         "editable": false,
                       },
-                      "fasting": Object {
-                        "label": "Did this patient fast?",
-                      },
                       "labsDone": Object {
                         "label": "Did they get labs done?",
                       },
-                      "pregnancyTest": Object {
-                        "label": "Pregnancy test positive?",
-                      },
                       "statusClarification": Object {
                         "label": "Status clarification (if picked Other)",
-                      },
-                      "urineTestDone": Object {
-                        "label": "Did they take a urine test?",
                       },
                     },
                   }
@@ -1524,20 +1405,16 @@ ShallowWrapper {
                   }
                 }
               />,
-              <Text
-                accessible={true}
-                allowFontScaling={true}
-                ellipsizeMode="tail"
-                style={
+              null,
+              <Button
+                onPress={[Function]}
+                styles={
                   Object {
-                    "color": "red",
-                    "margin": 10,
-                    "textAlign": "center",
+                    "margin": 4,
                   }
                 }
-              >
-                
-              </Text>,
+                title="To Medications"
+              />,
               <Button
                 onPress={[Function]}
                 styles={
@@ -1555,18 +1432,6 @@ ShallowWrapper {
                   }
                 }
                 title="Update"
-              />,
-              <Text
-                accessible={true}
-                allowFontScaling={true}
-                ellipsizeMode="tail"
-                style={
-                  Object {
-                    "color": "green",
-                    "margin": 10,
-                    "textAlign": "center",
-                  }
-                }
               />,
             ],
             "style": Object {
@@ -1594,20 +1459,11 @@ ShallowWrapper {
                     "date": Object {
                       "editable": false,
                     },
-                    "fasting": Object {
-                      "label": "Did this patient fast?",
-                    },
                     "labsDone": Object {
                       "label": "Did they get labs done?",
                     },
-                    "pregnancyTest": Object {
-                      "label": "Pregnancy test positive?",
-                    },
                     "statusClarification": Object {
                       "label": "Status clarification (if picked Other)",
-                    },
-                    "urineTestDone": Object {
-                      "label": "Did they take a urine test?",
                     },
                   },
                 },
@@ -1807,23 +1663,20 @@ ShallowWrapper {
               "rendered": null,
               "type": [Function],
             },
+            null,
             Object {
               "instance": null,
               "key": undefined,
               "nodeType": "class",
               "props": Object {
-                "accessible": true,
-                "allowFontScaling": true,
-                "children": "",
-                "ellipsizeMode": "tail",
-                "style": Object {
-                  "color": "red",
-                  "margin": 10,
-                  "textAlign": "center",
+                "onPress": [Function],
+                "styles": Object {
+                  "margin": 4,
                 },
+                "title": "To Medications",
               },
               "ref": null,
-              "rendered": "",
+              "rendered": null,
               "type": [Function],
             },
             Object {
@@ -1851,25 +1704,6 @@ ShallowWrapper {
                   "margin": 4,
                 },
                 "title": "Update",
-              },
-              "ref": null,
-              "rendered": null,
-              "type": [Function],
-            },
-            Object {
-              "instance": null,
-              "key": undefined,
-              "nodeType": "class",
-              "props": Object {
-                "accessible": true,
-                "allowFontScaling": true,
-                "children": undefined,
-                "ellipsizeMode": "tail",
-                "style": Object {
-                  "color": "green",
-                  "margin": 10,
-                  "textAlign": "center",
-                },
               },
               "ref": null,
               "rendered": null,

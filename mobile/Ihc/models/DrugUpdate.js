@@ -6,7 +6,20 @@ export default class DrugUpdate {
     const update = Object.assign({}, form);
     update.patientKey = patientKey;
     update.date = stringDate(new Date());
+    update.lastUpdated = new Date().getTime();
     return update;
+  }
+
+  static getDiscontinueDummy(prevDrugUpdate) {
+    return {
+      patientKey: prevDrugUpdate.patientKey,
+      name: prevDrugUpdate.name,
+      date: stringDate(new Date()),
+      dose: 'X',
+      frequency: 'X',
+      duration: 'X',
+      lastUpdated: new Date().getTime()
+    };
   }
 
   static getInstance() {

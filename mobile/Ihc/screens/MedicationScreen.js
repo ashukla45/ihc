@@ -1,13 +1,16 @@
 import React, { Component } from 'react';
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
-import data from '../services/DataService';
+import {localData, serverData} from '../services/DataService';
 import MedicationTable  from '../components/MedicationTable';
+import Container from '../components/Container';
 import {stringDate} from '../util/Date';
+import DrugUpdate from '../models/DrugUpdate';
 
 export default class MedicationScreen extends Component<{}> {
   /*
@@ -21,9 +24,10 @@ export default class MedicationScreen extends Component<{}> {
     this.state = {
       loading: false,
       updates: [],
-      dateToUpdates: {},
-      drugNames: new Set(),
-      error: null
+      errorMsg: null,
+      successMsg: null,
+      medicationCheckmarks: [],
+      todayDate: stringDate(new Date())
     };
     this.props.navigator.setOnNavigatorEvent(this.onNavigatorEvent.bind(this));
   }
@@ -36,18 +40,16 @@ export default class MedicationScreen extends Component<{}> {
   }
 
   refillMedication = (prevDrugUpdate) => {
-    const date = stringDate(new Date());
     const newUpdate = Object.assign({}, prevDrugUpdate);
-    newUpdate.date = date;
+    newUpdate.date = this.state.todayDate;
 
-    data.createDrugUpdate(newUpdate)
-      .then( () => {
-        this.loadMedications();
-        this.setState({error: null});
-      })
-      .catch( (e) => {
-        this.setState({error: e.message});
-      });
+    try {
+      localData.createDrugUpdate(newUpdate);
+      this.loadMedications();
+      this.setState({errorMsg: null});
+    } catch(e) {
+      this.setState({errorMsg: e.message});
+    }
   }
 
   changeMedication = (prevDrugUpdate) => {
@@ -63,8 +65,12 @@ export default class MedicationScreen extends Component<{}> {
     });
   }
 
-  // TODO
-  discontinueMedication = () => {
+  discontinueMedication = (prevDrugUpdate) => {
+    // Add a dummy drug update to updates prop
+    const newUpdate = DrugUpdate.getDiscontinueDummy(prevDrugUpdate);
+    this.setState({
+      updates: this.state.updates.concat([newUpdate])
+    });
   }
 
   createNewMedication = () => {
@@ -81,138 +87,193 @@ export default class MedicationScreen extends Component<{}> {
 
   loadMedications = () => {
     this.setState({ loading: true });
-    data.getMedicationUpdates(this.props.patientKey)
-      .then( updates => {
-        const dateToUpdates = {};
-        const drugNames = new Set();
-
-        updates.forEach( (update) => {
-          if(update.date in dateToUpdates) {
-            dateToUpdates[update.date].push(update);
-          } else{
-            dateToUpdates[update.date] = [update];
-          }
-
-          drugNames.add(update.name);
-        });
-
-        this.setState({updates: updates, dateToUpdates: dateToUpdates,
-          drugNames: drugNames, loading: false});
-      })
-      .catch(err => {
-        this.setState({ error: err.message, loading: false });
-      });
+    let updates = localData.getMedicationUpdates(this.props.patientKey);
+    let statusObj = localData.getStatus(this.props.patientKey, this.state.todayDate);
+    const checkmarks = statusObj.medicationCheckmarks;
+    this.setState({
+      updates: updates,
+      loading: false,
+      medicationCheckmarks: checkmarks,
+    });
   }
 
   componentDidMount() {
     this.loadMedications();
   }
 
-  completed = () => {
-    data.updateStatus(this.props.patientKey, stringDate(new Date()),
-      'pharmacyCompleted', new Date().getTime())
+  saveCheckmarks = () => {
+    // Local checkmark saves are handled in MedicationTable directly.
+    const statusObj = localData.getStatus(this.props.patientKey, this.state.todayDate);
+
+    this.setState({
+      loading: true,
+      errorMsg: null,
+      successMsg: null,
+    });
+
+    serverData.updateStatus(statusObj)
       .then( () => {
-        this.setState({
-          successMsg: 'Pharmacy marked as completed',
-          error: null
-        });
+        if(this.state.loading) {
+          this.setState({
+            successMsg: 'Saved',
+            errorMsg: null,
+            loading: false,
+            showRetryButton: false
+          });
+        }
       })
-      .catch( () => {
-        this.setState({error: 'No status exists for today. Should not need to' +
-          'mark as completed.', successMsg: null});
+      .catch( (e) => {
+        if(this.state.loading) {
+          localData.markPatientNeedToUpload(this.props.patientKey);
+          this.setState({
+            successMsg: null,
+            errorMsg: e.message,
+            loading: false,
+            showRetryButton: true
+          });
+        }
       });
   }
 
-  render() {
-    if(this.props.loading) {
-      return (
-        <View style={styles.container}>
-          <Text style={styles.title}>
-            {this.props.name}'s Medications
-          </Text>
+  // station: 'Doctor' or 'Pharmacy'
+  updateStatus(station) {
+    this.setState({
+      loading: true,
+      errorMsg: null,
+      successMsg: null,
+    });
 
-          <Text>Loading</Text>
-
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.buttonContainer}
-              onPress={this.createNewMedication}>
-              <Text style={styles.button}>New Medication</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
+    let statusObj = {};
+    if(station != 'Doctor' && station != 'Pharmacy') {
+      throw new Error(`Received invalid station: ${station}`);
     }
 
+    const fieldName = station === 'Doctor' ? 'doctorCompleted' : 'pharmacyCompleted';
+    try {
+      statusObj = localData.updateStatus(this.props.patientKey, this.state.todayDate,
+        fieldName, new Date().getTime());
+    } catch(e) {
+      this.setState({errorMsg: e.message, successMsg: null, loading: false});
+      return;
+    }
+
+    serverData.updateStatus(statusObj)
+      .then( () => {
+        if(this.state.loading) {
+          this.setState({
+            successMsg: `${station} marked as completed`,
+            errorMsg: null,
+            loading: false,
+            showRetryButton: false
+          });
+        }
+      })
+      .catch( (e) => {
+        if(this.state.loading) {
+          localData.markPatientNeedToUpload(this.props.patientKey);
+          this.setState({
+            successMsg: null,
+            errorMsg: e.message,
+            loading: false,
+            showRetryButton: true
+          });
+        }
+      });
+  }
+
+  completed = () => {
+    this.updateStatus('Doctor');
+  }
+
+  filled = () => {
+    this.updateStatus('Pharmacy');
+  }
+
+  // If Loading was canceled, we want to show a retry button
+  setLoading = (val, canceled) => {
+    this.setState({loading: val, showRetryButton: canceled});
+  }
+
+  setMsg = (type, msg) => {
+    const obj = {};
+    obj[type] = msg;
+    const other = type === 'successMsg' ? 'errorMsg' : 'successMsg';
+    obj[other] = null;
+    this.setState(obj);
+  }
+
+  render() {
     return (
-      <View style={styles.container}>
+      <Container loading={this.state.loading}
+        errorMsg={this.state.errorMsg}
+        successMsg={this.state.successMsg}
+        setLoading={this.setLoading}
+        setMsg={this.setMsg}
+        patientKey={this.props.patientKey}
+        showRetryButton={this.state.showRetryButton}
+      >
+
         <View style={styles.headerContainer}>
           <Text style={styles.title}>
             {this.props.name}'s Medications
           </Text>
 
-          <Text>R: Refill, C: Change, D: Discontinue</Text>
+          <Text>R: Refill, D: Change Dose, X: Cancel</Text>
+          <Text>T: Taking, N: Not Taking, I: Taking incorrectly</Text>
         </View>
 
-        <View style={styles.tableContainer}>
+        <ScrollView contentContainerStyle={styles.tableContainer} horizontal>
           <MedicationTable style={styles.table}
             refill={this.refillMedication}
             change={this.changeMedication}
             discontinue={this.discontinueMedication}
             updates={this.state.updates}
-            dateToUpdates={this.state.dateToUpdates}
-            drugNames={this.state.drugNames}
+            medicationCheckmarks={this.state.medicationCheckmarks}
+            patientKey={this.props.patientKey}
           />
-        </View>
+        </ScrollView>
 
         <View style={styles.footerContainer}>
-          <View style={styles.footer}>
-            <Text style={styles.success}>
-              {this.state.successMsg}
-            </Text>
-            <Text style={styles.error}>
-              {this.state.error}
-            </Text>
-            <TouchableOpacity
-              style={styles.buttonContainer}
-              onPress={this.createNewMedication}>
-              <Text style={styles.button}>New Medication</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.buttonContainer}
+            onPress={this.saveCheckmarks}>
+            <Text style={styles.button}>Save checkmarks</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.buttonContainer}
-              onPress={this.completed}>
-              <Text style={styles.button}>Completed</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.buttonContainer}
+            onPress={this.createNewMedication}>
+            <Text style={styles.button}>New Medication</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.buttonContainer}
+            onPress={this.completed}>
+            <Text style={styles.button}>Completed Prescribing</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.buttonContainer}
+            onPress={this.filled}>
+            <Text style={styles.button}>Filled</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </Container>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
   headerContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontSize: 20,
     textAlign: 'center',
-    margin: 4,
-    top: 10, // I don't like this but otherwise title doesn't show
   },
   tableContainer: {
-    maxHeight: '70%',
-    maxWidth: '95%',
-    padding: 0,
+    flex: 0,
   },
   buttonContainer: {
     width: 120,
@@ -228,23 +289,10 @@ const styles = StyleSheet.create({
     color: '#fefefe',
     textAlign: 'center',
   },
-  footer: {
+  footerContainer: {
     flex: 1,
     flexDirection: 'row',
-    margin: 0
-  },
-  footerContainer: {
-    margin: 0,
-    height: 60,
-  },
-  success: {
-    textAlign: 'center',
-    color: 'green',
-    margin: 0,
-  },
-  error: {
-    textAlign: 'center',
-    color: 'red',
-    margin: 0,
+    height: 40,
+    margin: 4,
   },
 });

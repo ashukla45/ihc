@@ -1,36 +1,71 @@
 import React, { Component } from 'react';
 import {
+  CheckBox,
   StyleSheet,
   TouchableOpacity,
   Text,
   View,
-  ScrollView
 } from 'react-native';
 import { Col, Row, Grid } from 'react-native-easy-grid';
 import {stringDate} from '../util/Date';
+import MedicationCheckmarks from '../models/MedicationCheckmarks';
+import {localData} from '../services/DataService';
 
 export default class MedicationTable extends Component<{}> {
   /*
    * Expects in props:
    *  {
-   *    refill, discontinue, change functions
+   *    refill, change, discontinue functions
    *    updates: [DrugUpdate obj, ...]
-   *    dateToUpdates: {date: [DrugUpdate objs with that date]}
-   *    drugNames: [drugNames]
+   *    medicationCheckmarks: MedicationCheckmarks as returned from realm
+   *      i.e. {'0': MedicationCheckmarks obj, '1': another }
+   *      so that we can edit checkmarks directly
+   *    patientKey
    *  }
    */
-  // TODO: only take in updates prop and calculate dateToUpdates and drugNames
-  // here
-  // TODO start with empty column for current date
   constructor(props) {
     super(props);
-    this.state = { todayDate: stringDate(new Date()) };
+    this.state = {
+      todayDate: stringDate(new Date()),
+      drugNames: new Set(),
+      dateToUpdates: {}
+    };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.processUpdates(nextProps.updates);
+  }
+
+  componentDidMount() {
+    this.processUpdates(this.props.updates);
+  }
+
+  processUpdates(updates) {
+    const dateToUpdates = {};
+    const drugNames = new Set();
+
+    updates.forEach( (update) => {
+      if(update.date in dateToUpdates) {
+        dateToUpdates[update.date].push(update);
+      } else{
+        dateToUpdates[update.date] = [update];
+      }
+
+      drugNames.add(update.name);
+    });
+
+    this.setState({
+      dateToUpdates: dateToUpdates,
+      drugNames: drugNames,
+    });
   }
 
   // Returns the update with that name, or null if not found
   // updates: Array of update objects
   // name: string of drug name
   updateWithName(updates, name) {
+    if(!updates)
+      return null;
     return updates.find( (update) => {
       return update.name === name;
     });
@@ -82,39 +117,59 @@ export default class MedicationTable extends Component<{}> {
   }
 
   /*
-   * Take in updates for most recent date, and drug names
+   * Take in updates, drug names, and ordered dates
    */
   /* eslint-disable react-native/no-inline-styles */
-  renderButtonColumn(updates, names) {
+  renderButtonColumn(dateToUpdates, names, dates) {
     const rows = names.map( (name, i) => {
-      const update = this.updateWithName(updates, name);
-      const exists = Boolean(update);
-      const disableButton = !exists || update.date === this.state.todayDate;
+      // A drug update with today's date
+      const todayUpdate = this.updateWithName(dateToUpdates[stringDate(new Date())], name);
+
+      // Find the previous update to be passed in to change/refill if an update
+      // for today doesn't exist
+      let prevUpdate = null;
+      if(!todayUpdate) {
+        let i = 0;
+        while(!prevUpdate) {
+          prevUpdate = this.updateWithName(dateToUpdates[dates[i]], name);
+          i++;
+        }
+        if(!prevUpdate) {
+          throw new Error(`Shouldve found an update for drug ${name}`);
+        }
+      }
+
+      // Disable refill button if an update already exists for today
+      const disableRefill = Boolean(todayUpdate);
+      // Only give option to discontinue if there isnt an update for today, but
+      // there is an update for previous date
+      const disableDiscontinue = Boolean(todayUpdate || !prevUpdate);
+
       return (
         <Row style={styles.row} key={`buttonRow${i}`}>
           <TouchableOpacity
-            style={[styles.buttonContainer, disableButton && {opacity: 0.5}]}
-            onPress={() => this.props.refill(update)}
-            disabled={disableButton}>
+            style={[styles.buttonContainer, disableRefill && {opacity: 0.5}]}
+            onPress={() => this.props.refill(prevUpdate)}
+            disabled={disableRefill}>
             <Text style={styles.button}>R</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.buttonContainer}
-            onPress={() => this.props.change(update)}>
-            <Text style={styles.button}>C</Text>
+            onPress={() => this.props.change(todayUpdate || prevUpdate)}>
+            <Text style={styles.button}>D</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.buttonContainer, disableButton && {opacity: 0.5}]}
-            onPress={() => this.props.discontinue(update)}
-            disabled={disableButton}>
-            <Text style={styles.button}>D</Text>
+            style={[styles.buttonContainer, disableDiscontinue && {opacity: 0.5}]}
+            onPress={() => this.props.discontinue(prevUpdate)}
+            disabled={disableDiscontinue}>
+            <Text style={styles.button}>X</Text>
           </TouchableOpacity>
         </Row>
       );
     });
 
     return (
-      <Col style={styles.nameColumn}>
+      <Col style={styles.actionColumn}>
         <Row style={styles.headerRow}><Text>Actions</Text></Row>
         {rows}
       </Col>
@@ -122,22 +177,67 @@ export default class MedicationTable extends Component<{}> {
   }
   /* eslint-enablereact-native/no-inline-styles */
 
-  /*
-   * Input the leftmost date
-   * We want the medications from the last checkup to be the ones potentially
-   * refilled. Thus, we want to save that date. However, when there are updates,
-   * that leftmost date will change to be today. We don't want to use today as
-   * the date though, so use the next value.
-   */
-  mostRecentDate(dates) {
-    if (dates[0] !== this.state.todayDate || !dates[1]) {
-      return dates[0];
+  // option 0: Taking, 1: Not taking, 2: Incorrectly
+  checked = (drugName, option) => {
+    let curr = this.props.medicationCheckmarks.find( instance => {
+      return instance.drugName === drugName;
+    });
+
+    let newObject = false; //true if created a new checkmarks obj
+    if(!curr) {
+      curr = MedicationCheckmarks.newMedicationCheckmarks(this.props.patientKey, drugName);
+      newObject = true;
     }
-    return dates[1];
+
+    // Write directly to realm
+    localData.write(() => {
+      switch(option) {
+        case 0:
+          curr.taking = !curr.taking;
+          break;
+        case 1:
+          curr.notTaking = !curr.notTaking;
+          break;
+        case 2:
+          curr.incorrectly = !curr.incorrectly;
+          break;
+        default:
+          throw new Error('Incorrect option passed to checked() in MedicationTable');
+      }
+
+      if(newObject){
+        this.props.medicationCheckmarks.push(curr);
+      }
+    });
+  }
+
+  renderCheckmarkColumn(drugNames) {
+    const medicationCheckmarks = Array.from(this.props.medicationCheckmarks);
+    const rows = drugNames.map( (drugName, i) => {
+      // Get the checkmarks for that drug
+      let checkmarks = medicationCheckmarks.find( instance => {
+        return instance.drugName === drugName;
+      });
+
+      // If doesn't exist, create blank check boxes
+      if(!checkmarks) {
+        checkmarks = {taking: false, notTaking: false, incorrectly: false};
+      }
+
+      return (
+        <Row style={styles.row} key={`checkmarkRow${i}`}>
+          <CheckBox value={checkmarks.taking} onValueChange={() => this.checked(drugName, 0)}/>
+          <CheckBox value={checkmarks.notTaking} onValueChange={() => this.checked(drugName, 1)}/>
+          <CheckBox value={checkmarks.incorrectly} onValueChange={() => this.checked(drugName, 2)}/>
+        </Row>
+      );
+    });
+
+    return rows;
   }
 
   render() {
-    if (!this.props.drugNames.size || !Object.keys(this.props.dateToUpdates).length) {
+    if (!this.state.drugNames.size || !Object.keys(this.state.dateToUpdates).length) {
       return (
         <View style={styles.container}>
           <Text style={styles.emptyText}>No data to show</Text>
@@ -145,14 +245,14 @@ export default class MedicationTable extends Component<{}> {
       );
     }
 
-    const names = Array.from(this.props.drugNames).sort();
+    const names = Array.from(this.state.drugNames).sort();
     const nameColumn = names.map( (name,i) => {
       return (
         <Row style={styles.row} key={`name${i}`}><Text>{name}</Text></Row>
       );
     });
 
-    const dates = Object.keys(this.props.dateToUpdates).sort().reverse();
+    const dates = Object.keys(this.state.dateToUpdates).sort().reverse();
     // Insert empty column for todays date if it doesn't exist
     // Empty column should be less confusing for pharmacists
     // i.e. they can just refill the leftmost medications without having to
@@ -162,27 +262,26 @@ export default class MedicationTable extends Component<{}> {
     }
 
     const updateColumns = dates.map( (date, i) => {
-      return this.renderColumn(date, this.props.dateToUpdates[date], names, i);
+      return this.renderColumn(date, this.state.dateToUpdates[date], names, i);
     });
 
-    const mostRecentDate = this.mostRecentDate(dates);
-    const buttonColumn = this.renderButtonColumn(this.props.dateToUpdates[mostRecentDate],
-      names);
+    const buttonColumn = this.renderButtonColumn(this.state.dateToUpdates, names, dates);
+    const checkmarkColumn = this.renderCheckmarkColumn(names);
 
     // Render row for header, then render all the rows
     return (
-      <ScrollView contentContainerStyle={styles.verticalScroller}>
-        <ScrollView horizontal contentContainerStyle={styles.horizontalScroller}>
-          <Grid>
-            <Col style={styles.nameColumn}>
-              <Row style={styles.headerRow}><Text>Drug name</Text></Row>
-              {nameColumn}
-            </Col>
-            {buttonColumn}
-            {updateColumns}
-          </Grid>
-        </ScrollView>
-      </ScrollView>
+      <Grid>
+        <Col style={styles.actionColumn}>
+          <Row style={styles.headerRow}><Text>T/N/I</Text></Row>
+          {checkmarkColumn}
+        </Col>
+        <Col style={styles.actionColumn}>
+          <Row style={styles.headerRow}><Text>Drug name</Text></Row>
+          {nameColumn}
+        </Col>
+        {buttonColumn}
+        {updateColumns}
+      </Grid>
     );
   }
 }
@@ -191,21 +290,14 @@ export default class MedicationTable extends Component<{}> {
  * Files that create a renderRow() function should use these styles for
  * consistency
  */
-const WIDTH = 700, HEIGHT = '50%';
 export const styles = StyleSheet.create({
   container: {
-    minWidth: WIDTH,
-    minHeight: HEIGHT,
-  },
-  horizontalScroller: {
-    minWidth: WIDTH,
-  },
-  verticalScroller: {
-    minHeight: HEIGHT,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   emptyText: {
     textAlign: 'center',
-    left: -64,
   },
   headerRow: {
     maxHeight: 20,
@@ -233,9 +325,8 @@ export const styles = StyleSheet.create({
     backgroundColor: '#adadad',
     borderWidth: 1
   },
-  nameColumn: {
-    minWidth: 100,
-    maxWidth: 100,
+  actionColumn: {
+    width: 100,
     backgroundColor: '#adada0',
     borderWidth: 1
   },
